@@ -4,7 +4,7 @@ from os import getenv
 import asyncpg
 from dotenv import load_dotenv
 
-from model import Actor, Movie
+from model import Actor, Movie, Language
 
 load_dotenv()
 URL = getenv('DATABASE_URL')
@@ -77,12 +77,41 @@ class DbService:
 
         return Movie(**dict(row))
 
+    async def get_languages(self, offset=0, limit=500) -> list[Language]:
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch('select * from languages order by name offset $1 limit $2', offset, limit)
+        return [Language(**dict(r)) for r in rows]
+
+    async def get_language(self, language_iso: str) -> Language | None:
+        async with self.pool.acquire() as connection:
+            row = await connection.fetchrow('select * from languages where iso_639_1=$1', language_iso)
+        return Language(**dict(row)) if row else None
+
+    async def upsert_language(self, language: Language) -> Language:
+        if language.iso_639_1 is None:
+            # insert
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("insert into languages(name) VALUES ($1) returning *",
+                                                language.name)
+        elif await self.get_language(language.iso_639_1) is None:
+            # insert
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("insert into languages(iso_639_1, name) VALUES ($1,$2) returning *",
+                                                language.iso_639_1, language.name)
+        else:
+            # update
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("""update languages set name=$2 where iso_639_1=$1 returning *""",
+                                                language.iso_639_1, language.name)
+
+        return Language(**dict(row))
+
 
 async def main_():
     db = DbService()
     await db.initialize()
-    await db.upsert_movie(Movie(1, 'Karramba'))
-
+    # await db.upsert_movie(Movie(1, 'Karramba'))
+    await db.upsert_language(Language("iso", "test"))
 
 if __name__ == '__main__':
     run(main_())

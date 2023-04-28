@@ -96,13 +96,6 @@ def get_casts():
     return casts_
 
 
-def get_language_list() -> list[str]:
-    df = pd.read_csv('data/tmdb_5000_movies.csv')
-
-    languages = list(df['spoken_languages'])
-    return languages
-
-
 def get_language_of_movie(language_field: str) -> list[Language]:
     dicts = json.loads(language_field)
     entries = []
@@ -112,7 +105,9 @@ def get_language_of_movie(language_field: str) -> list[Language]:
     return entries
 
 
-def get_languages(language_list: list[str]) -> Iterable[Language]:
+def get_languages() -> Iterable[Language]:
+    df = pd.read_csv('data/tmdb_5000_movies.csv')
+    language_list = list(df['spoken_languages'])
     languages = []
     for language in language_list:
         entries = get_language_of_movie(language)
@@ -130,5 +125,4 @@ if __name__ == '__main__':
     # movies = get_movies('data/tmdb_5000_movies.csv')
     # for c in movies:
     #     print(c)
-    languages_ = get_language_list()
-    print(get_languages(languages_))
+    print(get_languages())
