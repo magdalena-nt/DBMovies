@@ -3,9 +3,8 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 import pandas as pd
-from chardet.metadata import languages
 
-from model import CastEntry, Actor, Movie, Language
+from model import CastEntry, Actor, Movie, Language, Keyword
 
 
 # pd.options.display.max_rows = 10
@@ -116,6 +115,26 @@ def get_languages() -> Iterable[Language]:
     return languages
 
 
+def get_keyword_of_movie(keyword_field: str) -> list[Keyword]:
+    dicts = json.loads(keyword_field)
+    entries = []
+    for d in dicts:
+        entry = Keyword(keyword_id=d['id'], name=d['name'])
+        entries.append(entry)
+    return entries
+
+
+def get_keywords() -> Iterable[Keyword]:
+    df = pd.read_csv('data/tmdb_5000_movies.csv')
+    keyword_list = list(df['keywords'])
+    keywords = []
+    for keyword in keyword_list:
+        entries = get_keyword_of_movie(keyword)
+        keywords.extend(entries)
+    keywords = set(keywords)
+    return keywords
+
+
 if __name__ == '__main__':
     # casts_ = get_casts()
     # check_unique_cast_creditid(casts_)
@@ -125,4 +144,5 @@ if __name__ == '__main__':
     # movies = get_movies('data/tmdb_5000_movies.csv')
     # for c in movies:
     #     print(c)
-    print(get_languages())
+    # print(get_languages())
+    print(get_keywords())

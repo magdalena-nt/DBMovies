@@ -46,3 +46,9 @@ class Language:
     name: str
 
 
+@dataclass(unsafe_hash=True)
+class Keyword:
+    keyword_id: int
+    name: str
+
+

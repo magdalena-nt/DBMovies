@@ -4,7 +4,7 @@ from os import getenv
 import asyncpg
 from dotenv import load_dotenv
 
-from model import Actor, Movie, Language
+from model import Actor, Movie, Language, Keyword
 
 load_dotenv()
 URL = getenv('DATABASE_URL')
@@ -106,12 +106,42 @@ class DbService:
 
         return Language(**dict(row))
 
+    async def get_keywords(self, offset=0, limit=500) -> list[Keyword]:
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch('select * from keywords order by name offset $1 limit $2', offset, limit)
+        return [Keyword(**dict(r)) for r in rows]
+
+    async def get_keyword(self, keyword_id: int) -> Keyword | None:
+        async with self.pool.acquire() as connection:
+            row = await connection.fetchrow('select * from keywords where keyword_id=$1', keyword_id)
+        return Keyword(**dict(row)) if row else None
+
+    async def upsert_keyword(self, keyword: Keyword) -> Keyword:
+        if keyword.keyword_id is None:
+            # insert
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("insert into keywords(name) VALUES ($1) returning *",
+                                                keyword.name)
+        elif await self.get_keyword(keyword.keyword_id) is None:
+            # insert
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("insert into keywords(keyword_id, name) VALUES ($1,$2) returning *",
+                                                keyword.keyword_id, keyword.name)
+        else:
+            # update
+            async with self.pool.acquire() as connection:
+                row = await connection.fetchrow("""update keywords set name=$2 where keyword_id=$1 returning *""",
+                                                keyword.keyword_id, keyword.name)
+
+        return Keyword(**dict(row))
+
 
 async def main_():
     db = DbService()
     await db.initialize()
     # await db.upsert_movie(Movie(1, 'Karramba'))
     await db.upsert_language(Language("iso", "test"))
+    await db.upsert_keyword(Keyword(420, "test"))
 
 if __name__ == '__main__':
     run(main_())
