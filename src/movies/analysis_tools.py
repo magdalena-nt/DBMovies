@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-from model import CastEntry, Actor, Movie, Language, Keyword
+from model import CastEntry, Actor, Movie, Language, Keyword, CrewEntry, MovieActor, MovieKeyword
 
 
 # pd.options.display.max_rows = 10
@@ -15,6 +15,15 @@ def get_cast_of_movie(index: int, cast_field: str) -> list[CastEntry]:
     entries = []
     for d in dicts:
         entry = CastEntry(movie_id=index, **d)
+        entries.append(entry)
+    return entries
+
+
+def get_crew_of_movie(index: int, crew_field: str) -> list[CrewEntry]:
+    dicts = json.loads(crew_field)
+    entries = []
+    for d in dicts:
+        entry = CrewEntry(movie_id=index, **d)
         entries.append(entry)
     return entries
 
@@ -54,6 +63,27 @@ def get_actors(casts: list[str]) -> Iterable[Actor]:
         actors.extend([(c.id, c.name) for c in entries])
     actors = set(actors)
     return actors
+
+
+def get_movie_actors(filename: str) -> Iterable[MovieActor]:
+    df = pd.read_csv(filename)
+    df_sub = df.loc[:, ['movie_id', 'cast']]  # wycinek tabel
+    df_as_dict = df_sub.to_dict(orient='records')
+
+    res = []
+    for row in df_as_dict:
+        movie_id = row['movie_id']
+        cast_as_str = row['cast']
+        all_casts = get_cast_of_movie(movie_id, cast_as_str)
+        all_casts = [to_movie_actor(c) for c in all_casts]
+        res.extend(all_casts)
+
+    return res
+
+
+def to_movie_actor(cast_entry: CastEntry) -> MovieActor:
+    c = cast_entry
+    return MovieActor(movie_id=c.movie_id, actor_id=c.id, cast_id=c.cast_id, credit_id=c.credit_id, character=c.character, gender=c.gender, order_=c.order)
 
 
 def get_movies(filename: str) -> Iterable[Movie]:
@@ -135,6 +165,20 @@ def get_keywords() -> Iterable[Keyword]:
     return keywords
 
 
+def get_movie_keywords(filename: str):
+    df = pd.read_csv(filename)
+    df_sub = df.loc[:, ['id', 'keywords']]
+    df_as_dict = df_sub.to_dict(orient='records')
+    entries = []
+    for movie in df_as_dict:
+        keywords = json.loads(movie.get('keywords'))
+        for keyword in keywords:
+            entry = MovieKeyword(movie_id=movie.get('id'), keyword_id=keyword['id'])
+            entries.append(entry)
+
+    return entries
+
+
 if __name__ == '__main__':
     # casts_ = get_casts()
     # check_unique_cast_creditid(casts_)
@@ -146,3 +190,4 @@ if __name__ == '__main__':
     #     print(c)
     # print(get_languages())
     print(get_keywords())
+    print(get_movie_keywords('data/tmdb_5000_movies.csv'))

@@ -40,6 +40,17 @@ class Actor:
     name: str
 
 
+@dataclass
+class MovieActor:
+    cast_id: int
+    movie_id: int
+    actor_id: int
+    credit_id: str
+    character: str
+    gender: int
+    order_: int
+
+
 @dataclass(unsafe_hash=True)
 class Language:
     iso_639_1: str
@@ -50,5 +61,11 @@ class Language:
 class Keyword:
     keyword_id: int
     name: str
+
+
+@dataclass(unsafe_hash=True)
+class MovieKeyword:
+    movie_id: int
+    keyword_id: int
 
 

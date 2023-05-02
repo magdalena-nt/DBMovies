@@ -26,24 +26,10 @@ def upgrade() -> None:
         cast_id INT NOT NULL,
         character TEXT NOT NULL,
         gender INT NOT NULL,
-        "order" INT NOT NULL
+        order_ INT NOT NULL
         );
         """
     )
-    # op.execute(
-    #     f"""--sql
-    #     CREATE TABLE movie_actors(
-    #     credit_id TEXT NOT NULL UNIQUE PRIMARY KEY,
-    #     movie_id INT NOT NULL,
-    #     actor_id INT NOT NULL,
-    #     cast_id INT NOT NULL,
-    #     character TEXT NOT NULL,
-    #     gender INT NOT NULL,
-    #     "order" INT NOT NULL
-    #     );
-    #     """
-    # )
-
 
 def downgrade() -> None:
     op.execute(
